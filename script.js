@@ -79,8 +79,48 @@ const TYPE_OPTIONS = [
 const TARGET_OPTIONS = ['全公司','特定部門','內部協作','外部企業'];
 const STAFF_AVATAR_COLORS = ['#185FA5','#0F6E56','#C47A15','#8B3CC4','#D44E28','#2B7FE0'];
 
+// ── Hash Routing ──
+let _applyingHash = false;
+
+function updateHash() {
+  if (_applyingHash) return;
+  const deptEl = document.getElementById('section-department');
+  const isDept = deptEl && deptEl.style.display !== 'none';
+  const h = isDept ? 'meeting' : (currentStaff + (currentTab === 'stats' ? '/stats' : ''));
+  if (window.location.hash !== '#' + h) window.location.hash = h;
+}
+
+function applyHashFromURL() {
+  const hash = window.location.hash.replace(/^#/, '');
+  if (!hash) return;
+  _applyingHash = true;
+  if (hash === 'meeting') {
+    switchSection('department');
+  } else {
+    const parts = hash.split('/');
+    const name = parts[0];
+    const targetTab = parts[1] === 'stats' ? 'stats' : 'ogsm';
+    if (!staffList.includes(name)) { _applyingHash = false; return; }
+    const deptEl = document.getElementById('section-department');
+    if (deptEl && deptEl.style.display !== 'none') switchSection('personal');
+    if (targetTab !== currentTab) {
+      currentTab = targetTab;
+      document.getElementById('tab-content-ogsm').style.display = targetTab === 'ogsm' ? '' : 'none';
+      document.getElementById('tab-content-stats').style.display = targetTab === 'stats' ? '' : 'none';
+      document.getElementById('tab-btn-ogsm').classList.toggle('active', targetTab === 'ogsm');
+      document.getElementById('tab-btn-stats').classList.toggle('active', targetTab === 'stats');
+    }
+    if (name !== currentStaff) switchStaff(name);
+    else if (targetTab === 'stats') loadStats();
+    else loadAndRender();
+  }
+  _applyingHash = false;
+}
+window.addEventListener('hashchange', applyHashFromURL);
+
 function switchTab(tab) {
   currentTab = tab;
+  updateHash();
   document.getElementById('tab-content-ogsm').style.display = tab === 'ogsm' ? '' : 'none';
   document.getElementById('tab-content-stats').style.display = tab === 'stats' ? '' : 'none';
   document.getElementById('tab-btn-ogsm').classList.toggle('active', tab === 'ogsm');
@@ -1178,7 +1218,7 @@ function renderColumns() {
           <span class="action-item-name" contenteditable="true" spellcheck="false">${escHtml(a.action_name)}</span>
           <span class="action-badge badge-${a.status}">${escHtml(a.status)}</span>
         </div>
-        ${a.notes ? `<div class="action-item-notes"><svg class="action-item-notes-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5"/><line x1="10" y1="9" x2="10" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="10" cy="6.5" r="0.75" fill="currentColor"/></svg><span>${escHtml(a.notes)}</span></div>` : ''}
+        ${a.notes ? `<div class="action-item-notes"><svg class="action-item-notes-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5"/><line x1="10" y1="9" x2="10" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="10" cy="6.5" r="0.75" fill="currentColor"/></svg><span>${escHtml(a.notes).replace(/\n/g,'<br>')}</span></div>` : ''}
         <div class="action-item-meta">
           ${a.assignee ? `<span class="action-meta-assignee">
             <span class="avatar" style="background:${avatarColor(a.assignee)}">${initials(a.assignee)}</span>
@@ -1851,6 +1891,7 @@ function renderStaffList() {
 async function switchStaff(name) {
   if (name === currentStaff) return;
   currentStaff = name;
+  updateHash();
   localStorage.setItem('ogsm-current-staff', name);
   selectedGoalId = null;
   selectedStrategy = null;
@@ -2036,7 +2077,13 @@ async function loadAndRender() {
 async function init() {
   await initStaff();
   renderStaffList();
-  await loadAndRender();
+  const initHash = window.location.hash.replace(/^#/, '');
+  if (initHash) {
+    applyHashFromURL();
+  } else {
+    await loadAndRender();
+    updateHash();
+  }
   initOgsmTooltips();
   staffList
     .filter(function(name) { return name !== currentStaff && !staffDataCache[name]; })
@@ -2108,6 +2155,7 @@ function switchSection(section) {
   } else {
     clearInterval(_meetingSyncTimer); _meetingSyncTimer = null;
   }
+  updateHash();
 }
 
 // ── Chat Panel ──

@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>OGSM 策略看板</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div class="topbar">
+  <button class="sidebar-toggle-btn" id="sidebar-toggle-btn" onclick="toggleSidebar()" title="展開/收合選單">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+      <rect x="1" y="2.5" width="14" height="2" rx="1"/>
+      <rect x="1" y="7" width="14" height="2" rx="1"/>
+      <rect x="1" y="11.5" width="14" height="2" rx="1"/>
+    </svg>
+  </button>
+  <div class="topbar-sep"></div>
+  <div class="topbar-staff-list" id="topbar-staff-list"></div>
+  <button class="topbar-btn topbar-btn-chat" id="chat-toggle-btn" onclick="toggleChat()">
+    <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor"><path d="M2 5a2 2 0 012-2h12a2 2 0 012 2v7a2 2 0 01-2 2H6l-4 4V5z"/></svg>
+    AI 助手
+  </button>
+  <button class="topbar-btn topbar-btn-primary" onclick="openAddStaffModal()">
+    <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M8 2a1 1 0 011 1v4h4a1 1 0 010 2H9v4a1 1 0 01-2 0V9H3a1 1 0 010-2h4V3a1 1 0 011-1z"/></svg>
+    新增職員
+  </button>
+</div>
+
+<div class="app-body">
+
+<!-- Sidebar -->
+<div class="sidebar" id="sidebar">
+  <nav class="sidebar-nav">
+    <button class="sidebar-nav-item active" id="nav-personal" onclick="switchSection('personal')">
+      <svg width="15" height="15" viewBox="0 0 20 20" fill="currentColor"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/></svg>
+      個人紀錄區
+    </button>
+    <button class="sidebar-nav-item" id="nav-department" onclick="switchSection('department')">
+      <svg width="15" height="15" viewBox="0 0 20 20" fill="currentColor"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v1h8v-1zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-1a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v1h-3zM4.75 14.094A5.973 5.973 0 004 17v1H1v-1a3 3 0 013.75-2.906z"/></svg>
+      部門會議區
+    </button>
+  </nav>
+  <div class="sidebar-history-section" id="sidebar-history-section" style="display:none">
+    <div class="sidebar-history-title">歷史摘要</div>
+    <div id="sidebar-history-list"></div>
+  </div>
+</div>
+
+<div class="main-content-wrap">
+
+<!-- 個人紀錄區 -->
+<div id="section-personal">
+
+<!-- Tab Bar -->
+<div class="main-tabs">
+  <button class="main-tab active" id="tab-btn-ogsm" onclick="switchTab('ogsm')">OGSM</button>
+  <button class="main-tab" id="tab-btn-stats" onclick="switchTab('stats')">New統計</button>
+</div>
+
+<!-- OGSM Tab Content -->
+<div id="tab-content-ogsm">
+
+<!-- Objective -->
+<div class="obj-section" id="obj-section" style="display:none">
+  <div class="obj-eyebrow">
+    <div class="ogsm-tooltip-wrap" data-tooltip-key="O">
+      <span class="col-tag col-tag-o">O</span>
+    </div>
+    <span class="col-title">目的</span>
+  </div>
+  <div class="obj-name" id="obj-name" contenteditable="true" spellcheck="false"></div>
+</div>
+
+<!-- Three Columns -->
+<div class="three-col-wrap" id="three-col-wrap">
+  <div class="loading-overlay" style="grid-column:1/-1"><div class="spinner"></div><span>載入中</span></div>
+</div>
+
+</div><!-- /tab-content-ogsm -->
+
+<!-- Stats Tab Content -->
+<div id="tab-content-stats" style="display:none"></div>
+
+</div><!-- /section-personal -->
+
+<!-- 部門會議區 -->
+<div id="section-department" style="display:none">
+  <div class="meeting-layout">
+    <div class="meeting-header">
+      <div class="meeting-header-left">
+        <div class="meeting-title">每週部門會議</div>
+        <div class="meeting-week-nav-row">
+          <button class="stats-week-nav" onclick="meetingNavWeek(-1)">‹</button>
+          <div class="meeting-subtitle" id="meeting-week-label"></div>
+          <button class="stats-week-nav" onclick="meetingNavWeek(1)">›</button>
+        </div>
+      </div>
+      <div class="meeting-header-right">
+        <div class="meeting-header-score-group">
+          <div class="meeting-score-card" onclick="openDeptScoreModal()">
+            <div class="meeting-score-label">本週部門分數</div>
+            <div class="meeting-score-row">
+              <div class="meeting-score-value"><span id="meeting-total-score">—</span></div>
+              <div class="meeting-score-delta" id="meeting-score-delta"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="meeting-tabs">
+      <div class="meeting-tabs-left">
+        <button class="meeting-tab-btn active" onclick="switchMeetingTab('report')" id="mtab-report">會議報告</button>
+        <button class="meeting-tab-btn" onclick="switchMeetingTab('announce')" id="mtab-announce">佈達事項</button>
+      </div>
+      <div class="meeting-tabs-right">
+        <button class="meeting-ai-summary-btn" onclick="generateMeetingSummary()">✦ AI摘要</button>
+        <div id="meeting-status-filters" class="meeting-status-filters"></div>
+      </div>
+    </div>
+    <div class="meeting-body">
+      <div id="meeting-tab-report" class="meeting-tab-panel">
+        <div id="meeting-rows"></div>
+      </div>
+      <div id="meeting-tab-announce" class="meeting-tab-panel" style="display:none">
+        <div class="meeting-announce-wrap">
+          <div class="meeting-announce-current">
+            <div class="meeting-announce-top">
+              <span class="meeting-announce-week-title" id="meeting-announce-week-title"></span>
+              <div class="meeting-announce-toolbar">
+                <button class="announce-tool-btn" onmousedown="event.preventDefault();meetingAnnounceCmd('bold')" title="粗體"><b>B</b></button>
+                <button class="announce-tool-btn" onmousedown="event.preventDefault();meetingAnnounceCmd('insertUnorderedList')" title="列點">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1.5" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1.5" fill="currentColor" stroke="none"/></svg>
+                </button>
+                <button class="announce-tool-btn" onmousedown="event.preventDefault();meetingAnnounceCmd('link')" title="超連結">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                </button>
+              </div>
+            </div>
+            <div class="meeting-announce-editor" id="meeting-announce-editor" contenteditable="true" data-placeholder="輸入本週佈達事項..."></div>
+            <div class="meeting-announce-footer">
+              <button class="meeting-announce-save-btn" onclick="meetingAnnounceSave()">儲存本週佈達</button>
+            </div>
+          </div>
+          <div class="meeting-announce-history">
+            <div class="meeting-announce-history-title">歷史紀錄</div>
+            <div id="meeting-announce-history-list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div><!-- /section-department -->
+
+<!-- Meeting OGSM Picker Modal -->
+<div id="meeting-ogsm-picker" class="meeting-modal-overlay" style="display:none" onclick="if(event.target===this)closeAiMeetingModal()">
+  <div class="meeting-modal meeting-picker-modal">
+    <div class="meeting-modal-header">
+      <span id="meeting-picker-title">選取本週項目</span>
+      <button class="meeting-modal-close" onclick="closeAiMeetingModal()">✕</button>
+    </div>
+    <div class="picker-modal-hint">預設會幫你勾選「本週截止」或「進行中」的行動計劃，但不含已完成的。</div>
+    <div class="picker-modal-body" id="meeting-picker-body"></div>
+    <div class="mform-footer picker-modal-footer">
+      <button class="mform-cancel-btn" onclick="closeAiMeetingModal()">取消</button>
+      <button class="mform-submit-btn" onclick="confirmAiMeetingItems()">確認儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Row Modal -->
+<div id="meeting-addrow-modal" class="meeting-modal-overlay" style="display:none" onclick="if(event.target===this)closeMeetingAddRow()">
+  <div class="meeting-modal meeting-modal-form">
+    <div class="meeting-modal-header">
+      <span id="meeting-addrow-title">新增任務</span>
+      <button class="meeting-modal-close" onclick="closeMeetingAddRow()">✕</button>
+    </div>
+    <div class="meeting-modal-body meeting-modal-form-body">
+      <div class="mform-field">
+        <label class="mform-label">專案</label>
+        <input id="addrow-project" class="mform-input" type="text" placeholder="輸入專案名稱...">
+      </div>
+      <div class="mform-field">
+        <label class="mform-label">本週任務</label>
+        <textarea id="addrow-task" class="mform-textarea" placeholder="輸入任務描述..."></textarea>
+      </div>
+      <div class="mform-field">
+        <label class="mform-label">狀態</label>
+        <select id="addrow-status" class="mform-select">
+          <option value="未開始">未開始</option>
+          <option value="進行中">進行中</option>
+          <option value="待確認解法">待確認解法</option>
+          <option value="已解決（待觀察）">已解決（待觀察）</option>
+          <option value="已解決（完全改善）">已解決（完全改善）</option>
+          <option value="目前無解">目前無解</option>
+        </select>
+      </div>
+      <div class="mform-field">
+        <label class="mform-label">瓶頸 / 備註</label>
+        <textarea id="addrow-note" class="mform-textarea" placeholder="輸入當前瓶頸或備註..."></textarea>
+      </div>
+    </div>
+    <div class="mform-footer">
+      <button class="mform-cancel-btn" onclick="closeMeetingAddRow()">取消</button>
+      <button class="mform-submit-btn" onclick="submitMeetingAddRow()">新增</button>
+    </div>
+  </div>
+</div>
+
+<!-- Timeline Entry Modal -->
+<div id="meeting-tl-modal" class="meeting-modal-overlay" style="display:none" onclick="if(event.target===this)closeMeetingTimelineModal()">
+  <div class="meeting-modal meeting-modal-form">
+    <div class="meeting-modal-header">
+      <span id="meeting-tl-modal-title">新增時程</span>
+      <button class="meeting-modal-close" onclick="closeMeetingTimelineModal()">✕</button>
+    </div>
+    <div class="meeting-modal-body meeting-modal-form-body">
+      <div class="mform-field">
+        <label class="mform-label">時程名稱</label>
+        <input id="tl-entry-name" class="mform-input" type="text" placeholder="例：Q2 產品路線圖">
+      </div>
+      <div class="mform-field">
+        <label class="mform-label">時程內容</label>
+        <textarea id="tl-entry-content" class="mform-textarea mform-textarea-lg" placeholder="輸入時程詳細內容..."></textarea>
+      </div>
+    </div>
+    <div class="mform-footer">
+      <button class="mform-cancel-btn" onclick="closeMeetingTimelineModal()">取消</button>
+      <button class="mform-submit-btn" onclick="submitTimelineEntry()">儲存</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main-content-wrap -->
+
+<!-- ── Chat Panel ── -->
+<div class="chat-panel" id="chat-panel">
+  <div class="chat-resize-handle" id="chat-resize-handle"></div>
+  <div class="chat-panel-inner">
+    <div class="chat-panel-header">
+      <div class="chat-panel-icon">
+        <svg width="14" height="14" viewBox="0 0 20 20" fill="#fff"><path d="M2 5a2 2 0 012-2h12a2 2 0 012 2v7a2 2 0 01-2 2H6l-4 4V5z"/></svg>
+      </div>
+      <span class="chat-panel-title">AI 對話助手</span>
+      <button class="chat-close-btn" onclick="toggleChat()">✕</button>
+    </div>
+    <div class="chat-messages" id="chat-messages">
+      <div class="chat-bubble ai">嗨！我是你的 OGSM 策略助手。你可以問我關於目標、策略或行動項目的問題，我會盡力協助你分析與優化。</div>
+    </div>
+    <div class="chat-input-wrap">
+      <textarea class="chat-input" id="chat-input" placeholder="輸入訊息… (Enter 送出，Shift+Enter 換行)" rows="1"></textarea>
+      <button class="chat-send-btn" onclick="sendChatMessage()">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+</div><!-- /app-body -->
+
+<!-- ── Edit Action Modal ── -->
+<div class="modal-overlay" id="modal-edit">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="edit-modal-title"></div>
+        <div class="modal-sub" id="edit-modal-sub"></div>
+      </div>
+      <button class="modal-close" onclick="closeEditModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">行動項目名稱</label>
+        <input type="text" class="form-input" id="edit-action-name" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">策略</label>
+        <select class="form-select" id="edit-action-strategy"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">備註</label>
+        <textarea class="form-textarea" id="edit-notes" placeholder="輸入備註說明…"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">狀態</label>
+        <select class="form-select" id="edit-status">
+          <option value="未開始">未開始</option>
+          <option value="進行中">進行中</option>
+          <option value="完成">完成</option>
+          <option value="卡關">卡關</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">負責人</label>
+        <input type="text" class="form-input" id="edit-assignee" placeholder="請輸入姓名" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">截止日期</label>
+        <input type="date" class="form-input" id="edit-due-date" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-cancel" onclick="closeEditModal()">取消</button>
+      <button class="btn btn-save" id="edit-save-btn" onclick="saveEditModal()">儲存更新</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Add Goal Modal ── -->
+<div class="modal-overlay" id="modal-add-goal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">新增支線目標</div>
+        <div class="modal-sub">新增後將寫入 Google Sheets</div>
+      </div>
+      <button class="modal-close" onclick="closeAddGoalModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">支線名稱 <span style="color:#f5876e">*</span></label>
+        <input type="text" class="form-input" id="new-goal-name" placeholder="例：數位行銷強化" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">顏色</label>
+        <select class="form-select" id="new-goal-color">
+          <option value="teal">🟢 翠綠</option>
+          <option value="blue" selected>🔵 藍色</option>
+          <option value="amber">🟡 琥珀</option>
+          <option value="coral">🟠 珊瑚</option>
+          <option value="purple">🟣 紫色</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">截止日期</label>
+        <input type="date" class="form-input" id="new-goal-due" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">初始進度（%）</label>
+        <div class="progress-row">
+          <input type="range" id="new-goal-progress" min="0" max="100" step="1" value="0" oninput="document.getElementById('new-goal-progress-display').textContent=this.value+'%'"/>
+          <span class="pct-display" id="new-goal-progress-display">0%</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-cancel" onclick="closeAddGoalModal()">取消</button>
+      <button class="btn btn-save" id="add-goal-save-btn" onclick="saveNewGoal()">新增目標</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Add Action Modal ── -->
+<div class="modal-overlay" id="modal-add-action">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">新增行動項目</div>
+        <div class="modal-sub" id="add-action-goal-name"></div>
+      </div>
+      <button class="modal-close" onclick="closeAddActionModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">策略名稱 <span style="color:#f5876e">*</span></label>
+        <input type="text" class="form-input" id="new-action-strategy" placeholder="例：建立內容行銷飛輪" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">行動項目 <span style="color:#f5876e">*</span></label>
+        <input type="text" class="form-input" id="new-action-name" placeholder="例：建立文章選題資料庫" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">負責人</label>
+        <input type="text" class="form-input" id="new-action-assignee" placeholder="請輸入姓名" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">截止日期</label>
+        <input type="date" class="form-input" id="new-action-due" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">備註</label>
+        <textarea class="form-textarea" id="new-action-notes" placeholder="輸入備註說明…"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">狀態</label>
+        <select class="form-select" id="new-action-status">
+          <option value="未開始">未開始</option>
+          <option value="進行中">進行中</option>
+          <option value="完成">完成</option>
+          <option value="卡關">卡關</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-cancel" onclick="closeAddActionModal()">取消</button>
+      <button class="btn btn-save" id="add-action-save-btn" onclick="saveNewAction()">新增行動</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Add Strategy Modal ── -->
+<div class="modal-overlay" id="modal-add-strategy">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">新增策略</div>
+        <div class="modal-sub" id="add-strategy-goal-name"></div>
+      </div>
+      <button class="modal-close" onclick="closeAddStrategyModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">策略名稱 <span style="color:#f5876e">*</span></label>
+        <input type="text" class="form-input" id="new-strategy-name" placeholder="例：建立內容行銷飛輪" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">策略執行成功定義</label>
+        <input type="text" class="form-input" id="new-strategy-success-def" placeholder="例：每月新增 10 篇高品質文章" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-cancel" onclick="closeAddStrategyModal()">取消</button>
+      <button class="btn btn-save" id="add-strategy-save-btn" onclick="saveNewStrategy()">新增策略</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Traffic Light Definition Modal ── -->
+<div class="modal-overlay" id="modal-traffic-def">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">定義燈號意思</div>
+        <div class="modal-sub" id="traffic-def-goal-name"></div>
+      </div>
+      <button class="modal-close" onclick="closeOverlay('modal-traffic-def')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label" style="color:#ef4444">🔴 紅燈意思</label>
+        <input type="text" class="form-input" id="tdef-red" placeholder="例：嚴重落後，需立即介入" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="color:#f59e0b">🟡 黃燈意思</label>
+        <input type="text" class="form-input" id="tdef-yellow" placeholder="例：有風險，需關注" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="color:#10b981">🟢 綠燈意思</label>
+        <input type="text" class="form-input" id="tdef-green" placeholder="例：進展順利" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-cancel" onclick="closeOverlay('modal-traffic-def')">取消</button>
+      <button class="btn btn-save" onclick="saveTrafficDefsUI()">儲存定義</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Confirm Delete Modal ── -->
+<div class="modal-overlay" id="modal-confirm-delete">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <div class="modal-title">確認刪除</div>
+    </div>
+    <div class="modal-body">
+      <p id="confirm-delete-desc" style="color:var(--text2);font-size:14px;line-height:1.6;margin:0"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-cancel" onclick="closeOverlay('modal-confirm-delete')">取消</button>
+      <button class="btn btn-delete" onclick="executeDelete()">刪除</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Add Staff Modal ── -->
+<div class="modal-overlay" id="modal-add-staff">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">新增職員</div>
+        <div class="modal-sub">新增後可切換至該職員的 OGSM 看板</div>
+      </div>
+      <button class="modal-close" onclick="closeAddStaffModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">職員名稱 <span style="color:#f5876e">*</span></label>
+        <input type="text" class="form-input" id="new-staff-name" placeholder="例：Riku" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-cancel" onclick="closeAddStaffModal()">取消</button>
+      <button class="btn btn-save" id="add-staff-save-btn" onclick="saveNewStaff()">新增職員</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Edit Goal Modal ── -->
+<div class="modal-overlay" id="modal-edit-goal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">編輯目標</div>
+        <div class="modal-sub" id="edit-goal-modal-sub"></div>
+      </div>
+      <button class="modal-close" onclick="closeOverlay('modal-edit-goal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">顏色</label>
+        <select class="form-select" id="edit-goal-color">
+          <option value="teal">🟢 翠綠</option>
+          <option value="blue">🔵 藍色</option>
+          <option value="amber">🟡 琥珀</option>
+          <option value="coral">🟠 珊瑚</option>
+          <option value="purple">🟣 紫色</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-cancel" onclick="closeOverlay('modal-edit-goal')">取消</button>
+      <button class="btn btn-save" id="edit-goal-save-btn" onclick="saveEditGoal()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Edit Strategy Modal ── -->
+<div class="modal-overlay" id="modal-edit-strategy">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">編輯策略</div>
+        <div class="modal-sub" id="edit-strategy-modal-sub"></div>
+      </div>
+      <button class="modal-close" onclick="closeOverlay('modal-edit-strategy')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">策略執行成功定義</label>
+        <input type="text" class="form-input" id="edit-strategy-success-def" placeholder="例：每月新增 10 篇高品質文章" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-cancel" onclick="closeOverlay('modal-edit-strategy')">取消</button>
+      <button class="btn btn-save" id="edit-strategy-save-btn" onclick="saveEditStrategy()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Dept Notes Modal -->
+<div id="dept-notes-modal" class="dept-score-modal-overlay" style="display:none" onclick="if(event.target===this)closeDeptNotesModal()">
+  <div class="dept-score-modal">
+    <div class="dept-score-modal-header">
+      <span id="dept-notes-modal-title">本週部門成果/發現問題</span>
+      <button class="meeting-modal-close" onclick="closeDeptNotesModal()">✕</button>
+    </div>
+    <div class="dept-score-modal-body" id="dept-notes-modal-body"></div>
+  </div>
+</div>
+
+<!-- Dept Score Modal -->
+<div id="dept-score-modal" class="dept-score-modal-overlay" style="display:none" onclick="if(event.target===this)closeDeptScoreModal()">
+  <div class="dept-score-modal dept-score-modal-wide">
+    <div class="dept-score-modal-header">
+      <span id="dept-score-modal-title">本週部門上線項目</span>
+      <button class="meeting-modal-close" onclick="closeDeptScoreModal()">✕</button>
+    </div>
+    <div class="dept-score-modal-layout">
+      <div class="dept-score-modal-body" id="dept-score-modal-body"></div>
+      <div class="dept-score-chart-panel">
+        <div class="dept-score-chart-title">近6週部門分數</div>
+        <div id="dept-score-chart-wrap"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- AI Meeting Summary Modal -->
+<div id="ai-summary-modal" class="dept-score-modal-overlay" style="display:none" onclick="if(event.target===this)closeAiSummaryModal()">
+  <div class="dept-score-modal ai-summary-modal-inner">
+    <div class="dept-score-modal-header">
+      <span id="ai-summary-modal-title">部門週報 AI 摘要</span>
+      <button class="meeting-modal-close" onclick="closeAiSummaryModal()">✕</button>
+    </div>
+    <div class="dept-score-modal-body" id="ai-summary-modal-body"></div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>

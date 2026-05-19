@@ -1171,7 +1171,18 @@ function renderColumns() {
   const selectedGoal = state.goals.find(g => g.id === selectedGoalId);
   const goalActions = selectedGoalId ? state.actions.filter(a => a.goal_id === selectedGoalId) : [];
   const strategies = selectedGoalId
-    ? [...new Set(goalActions.map(a => a.strategy_name || '（未分類）'))]
+    ? (() => {
+        const fromState = state.strategies
+          .filter(s => s.goal_id === selectedGoalId)
+          .map(s => s.name);
+        const fromActions = [...new Set(goalActions.map(a => a.strategy_name || '（未分類）'))];
+        if (fromState.length > 0) {
+          const inState = new Set(fromState);
+          const extra = fromActions.filter(n => !inState.has(n));
+          return [...fromState, ...extra];
+        }
+        return fromActions;
+      })()
     : [];
 
   const sCount = selectedGoalId ? strategies.length : '';
@@ -2158,6 +2169,17 @@ function onStrategiesDrop(newOrder) {
   const reorderedIds = new Set(reordered.map(function(a) { return a.id; }));
   goalActs.forEach(function(a) { if (!reorderedIds.has(a.id)) reordered.push(a); });
   state.actions = otherActs.concat(reordered);
+
+  // Also reorder state.strategies so rendering stays consistent within this session
+  const otherStrats = state.strategies.filter(function(s) { return s.goal_id !== goalId; });
+  const goalStrats = state.strategies.filter(function(s) { return s.goal_id === goalId; });
+  const stratByName = {};
+  goalStrats.forEach(function(s) { stratByName[s.name] = s; });
+  const reorderedStrats = newOrder.map(function(n) { return stratByName[n]; }).filter(Boolean);
+  const reorderedStratNames = new Set(reorderedStrats.map(function(s) { return s.name; }));
+  goalStrats.forEach(function(s) { if (!reorderedStratNames.has(s.name)) reorderedStrats.push(s); });
+  state.strategies = otherStrats.concat(reorderedStrats);
+
   renderColumns();
   postData({ type: 'reorder_strategies', goal_id: goalId, strategy_names: newOrder }).catch(function() { showToast('❌ 排序儲存失敗', true); });
 }

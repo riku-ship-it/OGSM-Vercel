@@ -841,7 +841,9 @@ body {
 .goal-item:hover .drag-handle,
 .strategy-item:hover .drag-handle,
 .action-item:hover .drag-handle { opacity: 1; }
-.drag-ghost { opacity: .3 !important; }
+.goal-item:active, .strategy-item:active, .action-item:active { cursor: grabbing; }
+.goal-item:active [contenteditable], .strategy-item:active [contenteditable], .action-item:active [contenteditable] { cursor: grabbing; }
+.drag-ghost { opacity: .3 !important; cursor: grabbing; }
 .drag-indicator {
   height: 2px; background: var(--blue);
   border-radius: 99px; margin: 2px 4px;

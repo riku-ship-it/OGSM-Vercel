@@ -2092,8 +2092,12 @@ function setupDragDrop(container, onDrop) {
   if (items.length < 2) return;
   items.forEach(function(item) {
     item.setAttribute('draggable', 'true');
+    // 防止 contenteditable 子元素觸發文字拖移，干擾卡片拖移
+    item.querySelectorAll('[contenteditable]').forEach(function(el) {
+      el.setAttribute('draggable', 'false');
+    });
     item.addEventListener('dragstart', function(e) {
-      if (!e.target.closest('.drag-handle')) { e.preventDefault(); return; }
+      if (e.target.closest('[contenteditable]')) { e.preventDefault(); return; }
       dragSrc = item;
       e.dataTransfer.effectAllowed = 'move';
       e.dataTransfer.setData('text/plain', item.dataset.dragId);

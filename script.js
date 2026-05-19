@@ -717,9 +717,9 @@ async function fetchData(staff) {
   const s = staff || currentStaff;
   const [objRes, goalRes, stratRes, actRes] = await Promise.all([
     db.from('objectives').select('*').eq('staff', s),
-    db.from('goals').select('*').eq('staff', s),
-    db.from('strategies').select('*').eq('staff', s),
-    db.from('actions').select('*').eq('staff', s)
+    db.from('goals').select('*').eq('staff', s).order('sort_order', { nullsFirst: false }),
+    db.from('strategies').select('*').eq('staff', s).order('sort_order', { nullsFirst: false }),
+    db.from('actions').select('*').eq('staff', s).order('sort_order', { nullsFirst: false })
   ]);
   return {
     objectives: objRes.data || [],
@@ -890,8 +890,29 @@ async function postData(payload) {
     return { success: !error, message: error ? error.message : '刪除成功' };
   }
 
-  // ── 排序（接受但不重排，保持現有順序）──
-  if (type === 'reorder_goals' || type === 'reorder_strategies' || type === 'reorder_actions') {
+  // ── 排序 ──
+  if (type === 'reorder_goals') {
+    await Promise.all(
+      payload.goal_ids.map(function(id, i) {
+        return db.from('goals').update({ sort_order: i }).eq('id', id).eq('staff', staff);
+      })
+    );
+    return { success: true };
+  }
+  if (type === 'reorder_strategies') {
+    await Promise.all(
+      payload.strategy_names.map(function(name, i) {
+        return db.from('strategies').update({ sort_order: i }).eq('goal_id', payload.goal_id).eq('name', name).eq('staff', staff);
+      })
+    );
+    return { success: true };
+  }
+  if (type === 'reorder_actions') {
+    await Promise.all(
+      payload.action_ids.map(function(id, i) {
+        return db.from('actions').update({ sort_order: i }).eq('id', id).eq('staff', staff);
+      })
+    );
     return { success: true };
   }
 
@@ -2072,7 +2093,7 @@ function setupDragDrop(container, onDrop) {
   items.forEach(function(item) {
     item.setAttribute('draggable', 'true');
     item.addEventListener('dragstart', function(e) {
-      if (e.target.closest('[contenteditable="true"]')) { e.preventDefault(); return; }
+      if (!e.target.closest('.drag-handle')) { e.preventDefault(); return; }
       dragSrc = item;
       e.dataTransfer.effectAllowed = 'move';
       e.dataTransfer.setData('text/plain', item.dataset.dragId);

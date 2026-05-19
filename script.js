@@ -78,6 +78,35 @@ const TYPE_OPTIONS = [
 ];
 const TARGET_OPTIONS = ['全公司','特定部門','內部協作','外部企業'];
 const STAFF_AVATAR_COLORS = ['#185FA5','#0F6E56','#C47A15','#8B3CC4','#D44E28','#2B7FE0'];
+const STAFF_SCORING_CRITERIA = {
+  'Yumin': [
+    { label: '不算分', desc: '個人私訊問題，例：詢問功能操作或確認可行性' },
+    { label: '1 分', desc: 'AI教練指令優化、優化小工具（1分/單一功能）' },
+    { label: '5 分', desc: '建制小工具、新技術研究測試（有成果）' },
+    { label: '10 分', desc: '重大系統機制改版（需發對外公告通知）、內部推動新機制（穩定運行1個月成功）' },
+    { label: '20 分', desc: '根本性升級公司產品功能或工作流程，例：商品化Agent完整套解決方案' },
+  ],
+  'Luka': [
+    { label: '不算分', desc: '協助內部、外部操作的諮詢排難，不符合以下三項描述之範圍' },
+    { label: '1 分', desc: '將紀錄之疑問或內容更新至說明文件日常維護、優化Agent、skill或小工具、更新具體之文件' },
+    { label: '5 分', desc: '製作內部專用或外部客戶使用的Agent、skill或小工具、具體之文件' },
+    { label: '10 分', desc: 'Agent商品化的子策略或行動、廠商提出全新需求並推動製作出來(WP&MA)' },
+  ],
+  'Riku': [
+    { label: '不算分', desc: '回覆私訊問題、群組問題等，例：例行任務怎麼操作；客戶想了解BBP，接洽過來' },
+    { label: '1 分', desc: '小項的優化或新上線功能，例：BBP翻譯修正／統計值防呆設計' },
+    { label: '5 分', desc: '需要兩個禮拜以上的溝通或燒腦程度較高的項目，例：統計值批次列印／任務列表功能上線' },
+    { label: '10 分', desc: '需要反覆驗證，一個月以上的專案，例：內部OGSM導入' },
+    { label: '20 分', desc: '需要超級燒腦或三個月以上的，例：內部過計畫書導入／BBP速度效能優化（功能上線需要有發佈通知才算分）' },
+  ],
+  'Cathy': [
+    { label: '不算分', desc: '一般詢問沒有延伸過多需求探尋、新增帳號與簡單權限（例：要怎麼登入BBN、這個是D7做嗎？）' },
+    { label: '1 分', desc: '一般難度的工單/問題處理（例：微調分支條件、重複性排查）' },
+    { label: '5 分', desc: '較難/沒做過的設定 工單/問題處理、也包含較簡易的中型專案（例：ig新腳本邏輯設計、需盤點3個以上的自動化才能設定）' },
+    { label: '10 分', desc: '中型、大型專案；大規模一次性 需要持續推進的任務/問題處理' },
+    { label: '20 分', desc: '更難的專案，像之前的BBN導入，大約需要5個月以上（完整的解決方案）' },
+  ],
+};
 
 // ── Hash Routing ──
 let _applyingHash = false;
@@ -273,6 +302,17 @@ function renderStats() {
         '</div>'
     : '<button class="stats-add-btn" onclick="openAddStatsForm()">+ 新增上線項目</button>';
 
+  const staffCriteria = STAFF_SCORING_CRITERIA[currentStaff] || [];
+  const tooltipHtml = staffCriteria.length
+    ? '<div class="stats-legend-tooltip-title">' + escHtml(currentStaff) + ' 計分說明</div>' +
+      staffCriteria.map(function(c) {
+        return '<div class="stats-legend-tooltip-row">' +
+          '<span class="stats-legend-tooltip-label">' + escHtml(c.label) + '</span>' +
+          '<span class="stats-legend-tooltip-desc">' + escHtml(c.desc) + '</span>' +
+          '</div>';
+      }).join('')
+    : '<div class="stats-legend-tooltip-empty">暫無個人計分說明</div>';
+
   wrap.innerHTML =
     '<div class="stats-two-col">' +
       '<div class="stats-left-col">' +
@@ -301,7 +341,13 @@ function renderStats() {
           '</div>' +
         '</div>' +
         '<div class="stats-legend-card">' +
-          '<div class="stats-legend-title">計分標準</div>' +
+          '<div class="stats-legend-header">' +
+            '<div class="stats-legend-title">計分標準</div>' +
+            '<div class="stats-legend-info-wrap">' +
+              '<button class="stats-legend-info-btn" onmouseenter="showScoreTooltip(this)" onmouseleave="hideScoreTooltip()">？</button>' +
+              '<div class="stats-legend-tooltip" id="stats-score-tooltip">' + tooltipHtml + '</div>' +
+            '</div>' +
+          '</div>' +
           '<div class="stats-legend-list">' +
             '<div class="stats-legend-row stats-legend-small"><span class="stats-legend-name">小型</span><span class="stats-legend-pts">1 分</span></div>' +
             '<div class="stats-legend-row stats-legend-medium"><span class="stats-legend-name">中型</span><span class="stats-legend-pts">5 分</span></div>' +
@@ -352,6 +398,31 @@ function renderStats() {
 function statsNavWeek(dir) {
   statsWeekOffset += dir;
   renderStats();
+}
+
+function showScoreTooltip(btn) {
+  const tooltip = document.getElementById('stats-score-tooltip');
+  if (!tooltip) return;
+  const rect = btn.getBoundingClientRect();
+  const tooltipWidth = 500;
+  const margin = 10;
+  let left = rect.right + margin;
+  let top = rect.top - 8;
+  if (left + tooltipWidth > window.innerWidth - 8) {
+    left = rect.left - tooltipWidth - margin;
+  }
+  const tooltipHeight = tooltip.scrollHeight || 200;
+  if (top + tooltipHeight > window.innerHeight - 8) {
+    top = window.innerHeight - tooltipHeight - 8;
+  }
+  tooltip.style.left = left + 'px';
+  tooltip.style.top = top + 'px';
+  tooltip.style.display = 'block';
+}
+
+function hideScoreTooltip() {
+  const tooltip = document.getElementById('stats-score-tooltip');
+  if (tooltip) tooltip.style.display = 'none';
 }
 
 function openAddStatsForm() {
@@ -667,8 +738,24 @@ async function postData(payload) {
   const staff = payload.staff || currentStaff;
   const type  = payload.type;
 
-  // ── AI 操作仍走 GAS ──
-  if (type === 'ai_chat' || type === 'ai_generate_meeting' || type === 'ai_meeting_summary') {
+  // ── AI 操作走 Vercel API（ai_generate_meeting 仍走 GAS）──
+  if (type === 'ai_chat') {
+    const res = await fetch('/api/ai-chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...payload, staff })
+    });
+    return await res.json();
+  }
+  if (type === 'ai_meeting_summary') {
+    const res = await fetch('/api/ai-summary', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...payload, staff })
+    });
+    return await res.json();
+  }
+  if (type === 'ai_generate_meeting') {
     const res = await fetch(AI_URL, { method: 'POST', body: JSON.stringify({ ...payload, staff }) });
     return await res.json();
   }

@@ -2213,6 +2213,10 @@ async function init() {
   renderStaffList();
   const initHash = window.location.hash.replace(/^#/, '');
   if (initHash) {
+    if (initHash === 'meeting' && !staffDataCache[currentStaff]) {
+      const data = await fetchData().catch(function() { return null; });
+      if (data) { staffDataCache[currentStaff] = data; state = { strategies: [], ...data }; }
+    }
     applyHashFromURL();
   } else {
     await loadAndRender();
@@ -2585,12 +2589,14 @@ async function renderMeetingSection() {
   renderMeetingRows();
 
   // Fetch fresh data in background, then re-render
+  // Note: include currentStaff too — state may be empty if page loaded directly on #meeting
   const cachePromises = members
-    .filter(function(name) { return name !== currentStaff && !staffDataCache[name]; })
+    .filter(function(name) { return !staffDataCache[name]; })
     .map(function(name) {
       return fetchData(name).then(function(data) {
         staffDataCache[name] = data;
         try { localStorage.setItem('staffdata-v1-' + name, JSON.stringify(data)); } catch(e) {}
+        if (name === currentStaff) state = { strategies: [], ...data };
       }).catch(function() {});
     });
 
@@ -2953,7 +2959,7 @@ async function generateMeetingSummary() {
   // compute status counts across all members
   const statusCounts = { '未開始': 0, '進行中': 0, '卡關': 0, '完成': 0 };
   members.forEach(function(name) {
-    const data = name === currentStaff ? state : (staffDataCache[name] || {});
+    const data = name === currentStaff ? (staffDataCache[name] || state) : (staffDataCache[name] || {});
     (data.actions || []).forEach(function(a) {
       if (a.action_name && statusCounts[a.status] !== undefined) statusCounts[a.status]++;
     });
@@ -2961,7 +2967,7 @@ async function generateMeetingSummary() {
 
   // build per-member data
   const membersData = members.map(function(name) {
-    const data = name === currentStaff ? state : (staffDataCache[name] || {});
+    const data = name === currentStaff ? (staffDataCache[name] || state) : (staffDataCache[name] || {});
     const allActions = (data.actions || []).filter(function(a) { return !!a.action_name; });
     const selectedIds = getSelectedActionIds(name);
     const selectedActions = selectedIds.map(function(id) {
@@ -3062,7 +3068,7 @@ function renderMeetingRows() {
   const members = getMeetingOrderedMembers();
   let html = '';
   members.forEach(function(name) {
-    const data = name === currentStaff ? state : (staffDataCache[name] || {});
+    const data = name === currentStaff ? (staffDataCache[name] || state) : (staffDataCache[name] || {});
     const allActions = (data.actions || []).filter(function(a) { return !!a.action_name; });
     const selectedIds = getSelectedActionIds(name);
     const selectedActions = selectedIds.map(function(id) {
@@ -3299,7 +3305,7 @@ function openAiMeetingModal(memberName) {
 function renderPickerModal(memberName) {
   const bodyEl = document.getElementById('meeting-picker-body');
   if (!bodyEl) return;
-  const data = memberName === currentStaff ? state : (staffDataCache[memberName] || {});
+  const data = memberName === currentStaff ? (staffDataCache[memberName] || state) : (staffDataCache[memberName] || {});
   const allGoals = data.goals || [];
   const allStrategies = data.strategies || [];
   const allActions = (data.actions || []).filter(function(a) { return !!a.action_name; });

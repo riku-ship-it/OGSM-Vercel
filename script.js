@@ -1991,14 +1991,9 @@ function renderStaffList() {
   staffList.forEach((name, idx) => {
     const chip = document.createElement('button');
     chip.className = 'staff-chip' + (name === currentStaff ? ' active' : '');
-    chip.innerHTML = `<span class="staff-chip-avatar" style="background:${STAFF_AVATAR_COLORS[idx % STAFF_AVATAR_COLORS.length]}">${escHtml(name[0]||'')}</span><span class="staff-chip-label">${escHtml(name)}</span><span class="staff-chip-del" title="刪除職員">✕</span>`;
-    chip.addEventListener('click', function(e) {
-      if (e.target.classList.contains('staff-chip-del')) {
-        e.stopPropagation();
-        openDeleteStaffConfirm(name);
-      } else {
-        switchStaff(name);
-      }
+    chip.innerHTML = `<span class="staff-chip-avatar" style="background:${STAFF_AVATAR_COLORS[idx % STAFF_AVATAR_COLORS.length]}">${escHtml(name[0]||'')}</span><span class="staff-chip-label">${escHtml(name)}</span>`;
+    chip.addEventListener('click', function() {
+      switchStaff(name);
     });
     chip.addEventListener('mouseenter', function() {
       if (name !== currentStaff && !staffDataCache[name]) fetchData(name).then(data => { staffDataCache[name] = data; }).catch(() => {});

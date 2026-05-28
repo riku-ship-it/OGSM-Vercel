@@ -73,11 +73,11 @@ body {
 .staff-chip {
   display: flex;
   align-items: center;
-  gap: 4px;
-  height: 28px;
-  padding: 0 8px 0 6px;
+  gap: 6px;
+  height: 34px;
+  padding: 0 14px 0 10px;
   border-radius: 20px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   background: var(--bg3);
   color: var(--text2);
@@ -95,13 +95,13 @@ body {
   border-color: transparent;
 }
 .staff-chip-avatar {
-  width: 18px;
-  height: 18px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 700;
   color: #fff;
   flex-shrink: 0;

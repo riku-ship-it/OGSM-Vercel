@@ -3141,6 +3141,15 @@ function renderMeetingRows() {
     '</div>';
   });
   container.innerHTML = html || '<div class="meeting-ogsm-hint">無成員資料</div>';
+  container.querySelectorAll('.meeting-member-note-editor').forEach(function(editor) {
+    if (!editor._linkClickInited) {
+      editor._linkClickInited = true;
+      editor.addEventListener('click', function(e) {
+        const a = e.target.closest('a');
+        if (a) { e.preventDefault(); window.open(a.href, '_blank'); }
+      });
+    }
+  });
 }
 
 function meetingMemberNoteCmd(name, cmd) {
@@ -3152,6 +3161,10 @@ function meetingMemberNoteCmd(name, cmd) {
     showLinkPopover(editor, function(url, displayText, hasSelection) {
       if (hasSelection) {
         document.execCommand('createLink', false, url);
+        editor.querySelectorAll('a[href="' + url + '"]').forEach(function(a) {
+          a.setAttribute('target', '_blank');
+          a.setAttribute('rel', 'noopener');
+        });
       } else {
         const text = displayText || url;
         document.execCommand('insertHTML', false, '<a href="' + url + '" target="_blank" rel="noopener">' + text + '</a>');

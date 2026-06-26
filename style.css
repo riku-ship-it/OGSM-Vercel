@@ -1354,23 +1354,6 @@ body {
   flex-direction: column;
   gap: 10px;
 }
-.stats-test-dialog {
-  position: relative;
-  background: var(--blue);
-  color: #fff;
-  border-radius: 14px 14px 14px 4px;
-  padding: 12px 16px;
-  margin-top: auto;
-}
-.stats-test-dialog-title {
-  font-size: 13px;
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-.stats-test-dialog-body {
-  font-size: 12px;
-  opacity: 0.9;
-}
 .stats-legend-header { display: flex; align-items: center; justify-content: space-between; }
 .stats-legend-title { font-size: 13px; font-weight: 500; color: var(--text2); }
 .stats-legend-info-wrap { display: flex; }

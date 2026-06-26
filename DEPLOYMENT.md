@@ -12,7 +12,7 @@
 | 環境 | 用途 | 網址 | 資料庫 | 畫面標示 |
 |---|---|---|---|---|
 | 開發 (Development) | 本機改 code、即時測試 | `http://localhost:8765`(或任一本機靜態伺服器埠號) | Staging(測試庫) | 左下角藍色小角色 + 「開發環境」牌子 |
-| 測試 (Preview) | 推上雲端、給別人 review | 每次部署網址不同,見下方「如何取得網址」 | Staging(測試庫) | 左下角橘色小角色 + 「測試環境」牌子 |
+| 測試 (Preview) | 推上雲端、給別人 review | `https://ogsm-vercel-acnifglqd-riku-ship-its-projects.vercel.app`(每次部署網址會變,這是最新一次的,過期請見下方「如何取得網址」) | Staging(測試庫) | 左下角橘色小角色 + 「測試環境」牌子 |
 | 正式 (Production) | 真實使用者用的版本 | `https://ogsm-vercel.vercel.app` | Production(正式庫) | 無標示 |
 
 ### 如何取得最新的 Preview 網址

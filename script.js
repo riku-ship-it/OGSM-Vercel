@@ -365,10 +365,6 @@ function renderStats() {
             '<div class="stats-legend-row stats-legend-xlarge"><span class="stats-legend-name">超大型</span><span class="stats-legend-pts">20 分</span></div>' +
           '</div>' +
         '</div>' +
-        '<div class="stats-test-dialog">' +
-          '<div class="stats-test-dialog-title">💬 測試對話框</div>' +
-          '<div class="stats-test-dialog-body">這是用來驗收部署流程的測試元件</div>' +
-        '</div>' +
       '</div>' +
       '<div class="stats-right-col">' +
         '<div class="stats-note-area">' +
